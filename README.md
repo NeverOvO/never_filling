@@ -4,9 +4,12 @@ macOS下配合命令行，进行文件批量移动操作
 
 功能单一，使用非常简单
 
+
 # 界面
 
 图为开发Demo，独立发布后有修改，请依据最终应用为准
+
+Demo：https://github.com/NeverOvO/learningfoundation
 
 ![IMG_9703](https://user-images.githubusercontent.com/34906510/204122689-e4db9f71-f3e9-4c8c-9a7b-31d73b7d28e1.JPG)
 
