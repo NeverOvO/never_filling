@@ -17,7 +17,8 @@ macOS下配合命令行，进行文件批量移动操作
 
 Demo：https://github.com/NeverOvO/learningfoundation
 
-![IMG_9703](https://user-images.githubusercontent.com/34906510/204122689-e4db9f71-f3e9-4c8c-9a7b-31d73b7d28e1.JPG)
+![IMG_9703](https://user-images.githubusercontent.com/34906510/204123008-03e2712e-b821-4a66-bd92-201ff83a2792.JPG)
+
 
 # 注意
 
