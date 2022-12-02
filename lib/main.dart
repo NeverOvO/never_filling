@@ -13,6 +13,9 @@ class MyApp extends StatelessWidget {
       title: 'NeverOuO Filling',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        appBarTheme: const AppBarTheme(
+          titleTextStyle: TextStyle(fontSize: 15),
+        )
       ),
       home: const FillingPage(),
     );

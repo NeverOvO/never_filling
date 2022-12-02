@@ -26,15 +26,8 @@ Demo：https://github.com/NeverOvO/learningfoundation
 
 
 
-## Getting Started
+## 更新日志
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 2022/12/02
+    -  优化命令行的语句拼接与处理，适应更多的文件、文件夹名称
+    -  优化操作逻辑，减少不必要操作

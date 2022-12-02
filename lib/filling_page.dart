@@ -61,11 +61,12 @@ class _FillingPageState extends State<FillingPage> {
                   Expanded(
                     flex: 2,
                     child: TextField(
+                      enabled: false,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
                         enabledBorder: UnderlineInputBorder(),
                         labelStyle: TextStyle(color: Colors.grey),
-                        labelText: '请输入或选择源文件夹地址',
+                        labelText: '请选择源文件夹地址',
                       ),
                       controller: fromDirectoryPathController,
                       autocorrect:false,
@@ -78,7 +79,6 @@ class _FillingPageState extends State<FillingPage> {
                       if(selectedDirectory != null){
                         command = "";
                         total = 0;
-                        toDirectoryPathController.text = "";
                         fileLookupList!.clear();
                         fileLookupType!.clear();
                         fromDirectoryPathController.text = selectedDirectory;
@@ -117,7 +117,7 @@ class _FillingPageState extends State<FillingPage> {
                           if(lookupMimeType(fileSystemEntity.path) != null){
                             if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
                               fileLookupType![lookupMimeType(fileSystemEntity.path)] = "true";
-                              fileLookupList!.add([fileSystemEntity.path.toString().split("/").last,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path.replaceAll(" ", "\\ ")]);
+                              fileLookupList!.add([fileSystemEntity.path.toString().split("/").last,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path]);
                               total = fileLookupList!.length;
                             }
                           }
@@ -298,11 +298,12 @@ class _FillingPageState extends State<FillingPage> {
                   Expanded(
                     flex: 2,
                     child: TextField(
+                      enabled: false,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
                         enabledBorder: UnderlineInputBorder(),
                         labelStyle: TextStyle(color: Colors.grey),
-                        labelText: '请输入/选择/新建目标文件夹地址',
+                        labelText: '请选择目标文件夹地址',
                       ),
                       controller: toDirectoryPathController,
                       autocorrect:false,
@@ -353,24 +354,24 @@ class _FillingPageState extends State<FillingPage> {
                       command = "";
                       if(totalEnd.isNotEmpty){
                         if(totalEnd.length == 1){
-                          command = "${"mv " + totalEnd.first[2] + "/'" + totalEnd.first[0] +"'"  + " " + toDirectoryPathController.text.replaceAll(" ", "\\ ") + '/' + "'" + totalEnd.first[0]}'";
+                          command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '${toDirectoryPathController.text}/${totalEnd.first[0]}'";
                         }else{
 
                           if(repeat == 1){
-                            command = "mv " + totalEnd.first[2] + "/'" + totalEnd.first[0] +"'" + " " + toDirectoryPathController.text.replaceAll(" ", "\\ ") + '/' + "'" +(totalEnd.first[0].toString().replaceAll(".", "_0."))+"'";
+                            command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '${toDirectoryPathController.text}/${totalEnd.first[0].toString().replaceAll(".", "_0.")}'";
                             for(int i = 1;i<totalEnd.length ; i++){
-                              command += " ; mv " + totalEnd[i][2] + "/'" + totalEnd[i][0] +"'" + " " + toDirectoryPathController.text.replaceAll(" ", "\\ ") + '/' + "'" + (totalEnd[i][0].toString().replaceAll(".", "_${i.toString()}."))+"'";
+                              command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '${toDirectoryPathController.text}/${totalEnd[i][0].toString().replaceAll(".", "_${i.toString()}.")}'";
                             }
                           }else{
-                            command = "${"mv " + totalEnd.first[2] + "/'" + totalEnd.first[0] +"'"  + " " + toDirectoryPathController.text.replaceAll(" ", "\\ ") + '/' + "'" +  totalEnd.first[0]}'";
+                            command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '${toDirectoryPathController.text}/${totalEnd.first[0]}'";
                             for(int i = 1;i<totalEnd.length ; i++){
-                              command += "${" ; mv " + totalEnd[i][2] + "/'" + totalEnd[i][0] +"'"  + " " + toDirectoryPathController.text.replaceAll(" ", "\\ ") + '/' + "'" + totalEnd[i][0]}'";
+                              command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '${toDirectoryPathController.text}/${totalEnd[i][0]}'";
                             }
                           }
                         }
-                      }//mv /Users/Volumes/Seagate14T/硬盘下载/2304/《最新 精品卐網紅 洩密》 (7).mp4 /Users/Volumes/Seagate14T/硬盘下载/Demo/《最新 精品卐網紅 洩密》 (7)_0.mp4
+                      }//mv '/Volumes/Macintosh HD/Users/laihaibo/Downloads/1 2（2）/1_1 22(1)（2）.png'  '/Volumes/Macintosh HD/Users/laihaibo/Downloads/tt/1_1 22(1)（2）.png'
 
-                      print(command);
+                      // print(command);
                       Clipboard.setData(ClipboardData(text: command));
                       setState(() {});
                     },
