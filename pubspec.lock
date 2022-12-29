@@ -41,6 +41,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.17.0"
+  cross_file:
+    dependency: transitive
+    description:
+      name: cross_file
+      sha256: f71079978789bc2fe78d79227f1f8cfe195b31bbd8db2399b0d15a4b96fb843b
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.3.3+2"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -49,6 +57,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.5"
+  desktop_drop:
+    dependency: "direct main"
+    description:
+      name: desktop_drop
+      sha256: f649bd498e87d39ddf3ba229a720144fe2a5362ba921627303f97d0b09481e7d
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.4.0"
   fake_async:
     dependency: transitive
     description:
@@ -77,10 +93,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: c24465c112b1a31a37ac450afc2e1f927b7c11599beab93233d7ffb449373fe3
+      sha256: ecf52f978e72763ede54a93271318bbbca65a2be2d9ff658ec8ca4ea3a23d7ef
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "5.2.2"
+    version: "5.2.4"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -156,10 +172,10 @@ packages:
     dependency: "direct main"
     description:
       name: mime
-      sha256: dab22e92b41aa1255ea90ddc4bc2feaf35544fd0728e209638cad041a6e3928a
+      sha256: "52e38f7e1143ef39daf532117d6b8f8f617bf4bcd6044ed8c29040d20d269630"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "1.0.2"
+    version: "1.0.3"
   path:
     dependency: transitive
     description:
@@ -281,10 +297,10 @@ packages:
     dependency: transitive
     description:
       name: string_scanner
-      sha256: "862015c5db1f3f3c4ea3b94dc2490363a84262994b88902315ed74be1155612f"
+      sha256: "556692adab6cfa87322a115640c11f13cb77b3f076ddcc5d6ae3c20242bedcde"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "1.1.1"
+    version: "1.2.0"
   term_glyph:
     dependency: transitive
     description:
@@ -297,10 +313,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: c9aba3b3dbfe8878845dfab5fa096eb8de7b62231baeeb1cea8e3ee81ca8c6d8
+      sha256: ad540f65f92caa91bf21dfc8ffb8c589d6e4dc0c2267818b4cc2792857706206
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.4.15"
+    version: "0.4.16"
   vector_math:
     dependency: transitive
     description:
@@ -313,10 +329,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: ca121dbbadb3e43b449053feab0cdf3f2bff93b107cacf0290e3d29f717374b6
+      sha256: c9ebe7ee4ab0c2194e65d3a07d8c54c5d00bb001b76081c4a04cdb8448b59e46
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "3.1.2"
+    version: "3.1.3"
   xdg_directories:
     dependency: transitive
     description:

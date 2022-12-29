@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,9 @@ class _FillingPageState extends State<FillingPage> {
 
   final TextEditingController fromDirectoryPathController = TextEditingController();
   final TextEditingController toDirectoryPathController = TextEditingController();
+
+  bool _filePicktrue = true;
+
 
   Stream<FileSystemEntity>? fileList;
 
@@ -39,6 +43,10 @@ class _FillingPageState extends State<FillingPage> {
     super.dispose();
   }
 
+  // final List<XFile> _list = [];
+  bool _dragging = false;
+  bool _errorFrom = false;
+  bool _errorTo = false;
 
   @override
   Widget build(BuildContext context) {
@@ -53,52 +61,98 @@ class _FillingPageState extends State<FillingPage> {
         ),
         body:ListView(
           children: [
-
-            Container(
-              padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      enabled: false,
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                        enabledBorder: UnderlineInputBorder(),
-                        labelStyle: TextStyle(color: Colors.grey),
-                        labelText: '请选择源文件夹地址',
+            DropTarget(
+              onDragDone: (detail) {
+                setState(() {
+                  if(lookupMimeType(detail.files.first.path) != null){
+                    setState(() {
+                      _errorFrom = true;
+                    });
+                    Future.delayed(const Duration(seconds: 2)).then((onValue) async{
+                      setState(() {
+                        _errorFrom = false;
+                      });
+                    });
+                    return;
+                  }else{
+                    fromDirectoryPathController.text = detail.files.first.path;
+                    setState(() {
+                      _errorFrom = false;
+                    });
+                  }
+                });
+              },
+              onDragEntered: (detail) {
+                setState(() {
+                  _dragging = true;
+                });
+              },
+              onDragExited: (detail) {
+                setState(() {
+                  _dragging = false;
+                });
+              },
+              child: Container(
+                color: _dragging ? Colors.blue.withOpacity(0.4) : Colors.transparent,
+                child:Container(
+                  padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          enabled: false,
+                          decoration: const InputDecoration(
+                            contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+                            enabledBorder: UnderlineInputBorder(),
+                            labelStyle: TextStyle(color: Colors.grey),
+                            labelText: '请选择源文件夹地址或拖动到此处',
+                          ),
+                          controller: fromDirectoryPathController,
+                          autocorrect:false,
+                          style: const TextStyle(color: Colors.black,fontSize: 11),
+                        ),
                       ),
-                      controller: fromDirectoryPathController,
-                      autocorrect:false,
-                      style: const TextStyle(color: Colors.black,fontSize: 11),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () async{
-                      String? selectedDirectory = await FilePicker.platform.getDirectoryPath(dialogTitle:"选择源文件夹",lockParentWindow: true);
-                      if(selectedDirectory != null){
-                        command = "";
-                        total = 0;
-                        fileLookupList!.clear();
-                        fileLookupType!.clear();
-                        fromDirectoryPathController.text = selectedDirectory;
-                        setState(() {});
-                      }
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.all(Radius.circular(6.0)),
+                      GestureDetector(
+                        onTap: () async{
+                          if(_filePicktrue){
+                            _filePicktrue = false;
+                            String? selectedDirectory = await FilePicker.platform.getDirectoryPath(dialogTitle:"选择源文件夹",lockParentWindow: true);
+                            if(selectedDirectory != null){
+                              command = "";
+                              total = 0;
+                              fileLookupList!.clear();
+                              fileLookupType!.clear();
+                              fromDirectoryPathController.text = selectedDirectory;
+                              setState(() {});
+                            }
+                            _filePicktrue = true;
+                          }
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.all(Radius.circular(6.0)),
+                          ),
+                          margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                          child: const Text("选择",style: TextStyle(color: Colors.white),),
+                        ),
                       ),
-                      margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                      child: const Text("选择",style: TextStyle(color: Colors.white),),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
+            ),
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.fromLTRB(20, 0, 10, 10),
+              child: Offstage(
+                offstage: !_errorFrom,
+                child: const Text("请选择正确的文件夹",style: TextStyle(fontSize: 10,color: Colors.red),),
+              )
             ),
 
             Container(
@@ -291,46 +345,94 @@ class _FillingPageState extends State<FillingPage> {
 
                 ,style: const TextStyle(fontSize: 11,color: Colors.black),),
             ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      enabled: false,
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                        enabledBorder: UnderlineInputBorder(),
-                        labelStyle: TextStyle(color: Colors.grey),
-                        labelText: '请选择目标文件夹地址',
+
+            DropTarget(
+              onDragDone: (detail) {
+                setState(() {
+                  if(lookupMimeType(detail.files.first.path) != null){
+                    setState(() {
+                      _errorTo = true;
+                    });
+                    Future.delayed(const Duration(seconds: 2)).then((onValue) async{
+                      setState(() {
+                        _errorTo = false;
+                      });
+                    });
+                    return;
+                  }else{
+                    toDirectoryPathController.text = detail.files.first.path;
+                    setState(() {
+                      _errorTo = false;
+                    });
+                  }
+                });
+              },
+              onDragEntered: (detail) {
+                setState(() {
+                  _dragging = true;
+                });
+              },
+              onDragExited: (detail) {
+                setState(() {
+                  _dragging = false;
+                });
+              },
+              child: Container(
+                color: _dragging ? Colors.green.withOpacity(0.4) : Colors.transparent,
+                child:Container(
+                  padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          enabled: false,
+                          decoration: const InputDecoration(
+                            contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+                            enabledBorder: UnderlineInputBorder(),
+                            labelStyle: TextStyle(color: Colors.grey),
+                            labelText: '请选择目标文件夹地址',
+                          ),
+                          controller: toDirectoryPathController,
+                          autocorrect:false,
+                          style: const TextStyle(color: Colors.black,fontSize: 11),
+                        ),
                       ),
-                      controller: toDirectoryPathController,
-                      autocorrect:false,
-                      style: const TextStyle(color: Colors.black,fontSize: 11),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () async{
-                      String? selectedDirectory = await FilePicker.platform.getDirectoryPath(dialogTitle:"选择目标文件夹",lockParentWindow: true);
-                      if(selectedDirectory != null){
-                        toDirectoryPathController.text = selectedDirectory;
-                      }
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.all(Radius.circular(6.0)),
+                      GestureDetector(
+                        onTap: () async{
+                          if(_filePicktrue){
+                            _filePicktrue = false;
+                            String? selectedDirectory = await FilePicker.platform.getDirectoryPath(dialogTitle:"选择目标文件夹",lockParentWindow: true);
+                            if(selectedDirectory != null){
+                              toDirectoryPathController.text = selectedDirectory;
+                            }
+                            _filePicktrue = true;
+                          }
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.all(Radius.circular(6.0)),
+                          ),
+                          margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                          child: const Text("选择",style: TextStyle(color: Colors.white),),
+                        ),
                       ),
-                      margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                      child: const Text("选择",style: TextStyle(color: Colors.white),),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
+            ),
+            Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.fromLTRB(20, 0, 10, 10),
+                child: Offstage(
+                  offstage: !_errorTo,
+                  child: const Text("请选择正确的文件夹",style: TextStyle(fontSize: 10,color: Colors.red),),
+                )
             ),
 
             Container(
@@ -400,6 +502,7 @@ class _FillingPageState extends State<FillingPage> {
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
               child: SelectableText(command,style: const TextStyle(fontSize: 11,color: Colors.black),),
             ),
+
           ],
         ),
       ),
