@@ -31,7 +31,7 @@ Demo：https://github.com/NeverOvO/learningfoundation
 ## 更新日志
 
 ### 2023/01/14
-    - 添加解释文章
+    -  添加解释文章
 
 ### 2022/12/29
     -  增加文件夹拖动功能，选择更加方便
