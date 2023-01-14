@@ -471,9 +471,8 @@ class _FillingPageState extends State<FillingPage> {
                             }
                           }
                         }
-                      }//mv '/Volumes/Macintosh HD/Users/laihaibo/Downloads/1 2（2）/1_1 22(1)（2）.png'  '/Volumes/Macintosh HD/Users/laihaibo/Downloads/tt/1_1 22(1)（2）.png'
+                      }
 
-                      // print(command);
                       Clipboard.setData(ClipboardData(text: command));
                       setState(() {});
                     },
