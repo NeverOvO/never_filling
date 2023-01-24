@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mime/mime.dart';
+import 'package:neveruseless/neveruseless.dart';
 
 class FillingPage extends StatefulWidget {
   final Map? arguments;
@@ -15,10 +16,14 @@ class FillingPage extends StatefulWidget {
 
 class _FillingPageState extends State<FillingPage> {
 
+  String fromHistory = "";
+  String toHistory = "";
+
   final TextEditingController fromDirectoryPathController = TextEditingController();
   final TextEditingController toDirectoryPathController = TextEditingController();
 
   bool _filePicktrue = true;
+
 
 
   Stream<FileSystemEntity>? fileList;
@@ -33,9 +38,23 @@ class _FillingPageState extends State<FillingPage> {
   int repeat = 0;//0 不保留 1 保留
 
   String command = "";
+
   @override
   void initState() {
     super.initState();
+    readHis();
+  }
+
+  void readHis() async{
+    //读取上次操作的位置 如果没有选择则进行默认处理
+    fromHistory = await neverLocalStorageRead("FromHistory");
+    if(fromHistory == "null"){
+      fromHistory = "";
+    }
+    toHistory = await neverLocalStorageRead("ToHistory");
+    if(toHistory == "null"){
+      toHistory = "";
+    }
   }
 
   @override
@@ -45,8 +64,6 @@ class _FillingPageState extends State<FillingPage> {
 
   // final List<XFile> _list = [];
   bool _dragging = false;
-  bool _errorFrom = false;
-  bool _errorTo = false;
 
   @override
   Widget build(BuildContext context) {
@@ -65,20 +82,19 @@ class _FillingPageState extends State<FillingPage> {
               onDragDone: (detail) {
                 setState(() {
                   if(lookupMimeType(detail.files.first.path) != null){
-                    setState(() {
-                      _errorFrom = true;
-                    });
-                    Future.delayed(const Duration(seconds: 2)).then((onValue) async{
-                      setState(() {
-                        _errorFrom = false;
-                      });
-                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('请选择正确的文件夹'),
+                        action: SnackBarAction(
+                          label: '确认',
+                          onPressed: () {},
+                        ),
+                      ),
+                    );
                     return;
                   }else{
                     fromDirectoryPathController.text = detail.files.first.path;
-                    setState(() {
-                      _errorFrom = false;
-                    });
+                    setState(() {});
                   }
                 });
               },
@@ -102,11 +118,11 @@ class _FillingPageState extends State<FillingPage> {
                         flex: 2,
                         child: TextField(
                           enabled: false,
-                          decoration: const InputDecoration(
-                            contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                            enabledBorder: UnderlineInputBorder(),
-                            labelStyle: TextStyle(color: Colors.grey),
-                            labelText: '请选择源文件夹地址或拖动到此处',
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                            enabledBorder: const UnderlineInputBorder(),
+                            labelStyle: const TextStyle(color: Colors.grey),
+                            labelText: fromHistory == "" ? '请选择源文件夹地址或拖动到此处' : "默认填入上次地址:$fromHistory",
                           ),
                           controller: fromDirectoryPathController,
                           autocorrect:false,
@@ -147,15 +163,6 @@ class _FillingPageState extends State<FillingPage> {
               ),
             ),
             Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.fromLTRB(20, 0, 10, 10),
-              child: Offstage(
-                offstage: !_errorFrom,
-                child: const Text("请选择正确的文件夹",style: TextStyle(fontSize: 10,color: Colors.red),),
-              )
-            ),
-
-            Container(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
               child: Row(
                 children: [
@@ -163,30 +170,38 @@ class _FillingPageState extends State<FillingPage> {
                     onTap: () async{
                       command = "";
                       total = 0;
+
                       if(fromDirectoryPathController.text.isNotEmpty){
                         fileList = Directory(fromDirectoryPathController.text).list(recursive: true);
-                        fileLookupList!.clear();
-                        fileLookupType!.clear();
-                        await for(FileSystemEntity fileSystemEntity in fileList!){
-                          if(lookupMimeType(fileSystemEntity.path) != null){
-                            if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
-                              fileLookupType![lookupMimeType(fileSystemEntity.path)] = "true";
-                              fileLookupList!.add([fileSystemEntity.path.toString().split("/").last,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path]);
-                              total = fileLookupList!.length;
-                            }
+                      }else{
+                        if(fromHistory != ""){
+                          fileList = Directory(fromHistory).list(recursive: true);
+                        }else{
+                          return ;
+                        }
+                      }
+
+                      fileLookupList!.clear();
+                      fileLookupType!.clear();
+                      await for(FileSystemEntity fileSystemEntity in fileList!){
+                        if(lookupMimeType(fileSystemEntity.path) != null){
+                          if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
+                            fileLookupType![lookupMimeType(fileSystemEntity.path)] = "true";
+                            fileLookupList!.add([fileSystemEntity.path.toString().split("/").last,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path]);
+                            total = fileLookupList!.length;
                           }
                         }
-                        setState(() {});
                       }
+                      setState(() {});
 
                     },
                     child: Container(
                       decoration: const BoxDecoration(
                         color: Colors.blue,
-                        borderRadius: BorderRadius.all(Radius.circular(6.0)),
+                        borderRadius: BorderRadius.all(Radius.circular(4.0)),
                       ),
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                      child: const Text("检索源文件地址目录",style: TextStyle(color: Colors.white),),
+                      padding: const EdgeInsets.all(10),
+                      child: const Text("检索源文件地址目录",style: TextStyle(color: Colors.white,fontSize: 12),),
                     ),
                   ),
                   const SizedBox(width: 10,),
@@ -198,12 +213,12 @@ class _FillingPageState extends State<FillingPage> {
                       });
                     },
                     child: Container(
-                      decoration: BoxDecoration(
-                        color: repeat == 0 ? Colors.blue : Colors.green,
-                        borderRadius: const BorderRadius.all(Radius.circular(6.0)),
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.all(Radius.circular(4.0)),
                       ),
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                      child: Text(repeat == 0 ? "重名文件:不保留" : "重名文件:保留",style: const TextStyle(color: Colors.white),),
+                      padding: const EdgeInsets.all(10),
+                      child: Text(repeat == 0 ? "重名文件:不保留" : "重名文件:保留",style: const TextStyle(color: Colors.white,fontSize: 12),),
                     ),
                   ),
 
@@ -250,7 +265,6 @@ class _FillingPageState extends State<FillingPage> {
             ):const SizedBox(),
             fileLookupList!.isNotEmpty ?
             Container(
-              height: 300,
               decoration: BoxDecoration(
                 color: Colors.grey.withOpacity(0.3),
                 borderRadius: const BorderRadius.all(Radius.circular(10.0)),
@@ -291,10 +305,11 @@ class _FillingPageState extends State<FillingPage> {
                     ),
                   ),
                   const Divider(height: 1,color: Colors.grey,),
-                  Expanded(
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 200),
                     child: ListView.separated(
-                      // physics: NeverScrollableScrollPhysics(),
-                      // shrinkWrap: true,
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.all(0),
                       itemCount: fileLookupList!.length,
                       itemBuilder: (context ,index){
                         return Container(
@@ -334,36 +349,33 @@ class _FillingPageState extends State<FillingPage> {
                         return const Divider(height: 1,color: Colors.grey,);
                       },
                     ),
-                  )
+                  ),
                 ],
               ),
             ): const SizedBox(),
-
             Container(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-              child: Text("当前目录文件总数: ${fileLookupList!.length.toString()} ，已选择文件总数: ${total.toString()}"
-
-                ,style: const TextStyle(fontSize: 11,color: Colors.black),),
+              child: Text("当前目录文件总数: ${fileLookupList!.length.toString()} ，已选择文件总数: ${total.toString()}",style: const TextStyle(fontSize: 11,color: Colors.black),),
             ),
-
             DropTarget(
               onDragDone: (detail) {
                 setState(() {
+
+
                   if(lookupMimeType(detail.files.first.path) != null){
-                    setState(() {
-                      _errorTo = true;
-                    });
-                    Future.delayed(const Duration(seconds: 2)).then((onValue) async{
-                      setState(() {
-                        _errorTo = false;
-                      });
-                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('请选择正确的文件夹'),
+                        action: SnackBarAction(
+                          label: '确认',
+                          onPressed: () {},
+                        ),
+                      ),
+                    );
                     return;
                   }else{
                     toDirectoryPathController.text = detail.files.first.path;
-                    setState(() {
-                      _errorTo = false;
-                    });
+                    setState(() {});
                   }
                 });
               },
@@ -387,11 +399,11 @@ class _FillingPageState extends State<FillingPage> {
                         flex: 2,
                         child: TextField(
                           enabled: false,
-                          decoration: const InputDecoration(
-                            contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                            enabledBorder: UnderlineInputBorder(),
-                            labelStyle: TextStyle(color: Colors.grey),
-                            labelText: '请选择目标文件夹地址',
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                            enabledBorder: const UnderlineInputBorder(),
+                            labelStyle: const TextStyle(color: Colors.grey),
+                            labelText: toHistory == "" ? '请选择目标文件夹地址' : "默认填入上次地址:$toHistory",
                           ),
                           controller: toDirectoryPathController,
                           autocorrect:false,
@@ -427,24 +439,38 @@ class _FillingPageState extends State<FillingPage> {
               ),
             ),
             Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.fromLTRB(20, 0, 10, 10),
-                child: Offstage(
-                  offstage: !_errorTo,
-                  child: const Text("请选择正确的文件夹",style: TextStyle(fontSize: 10,color: Colors.red),),
-                )
-            ),
-
-            Container(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
               child: Row(
                 children: [
                   InkWell(
                     onTap: () async{
 
-                      if(toDirectoryPathController.text == ""){
+                      if(fromDirectoryPathController.text == "" && fromHistory == ""){
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('请选择源文件夹'),
+                            action: SnackBarAction(
+                              label: '确认',
+                              onPressed: () {},
+                            ),
+                          ),
+                        );
                         return ;
                       }
+                      if(toDirectoryPathController.text == "" && toHistory == ""){
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('请选择目标文件夹'),
+                            action: SnackBarAction(
+                              label: '确认',
+                              onPressed: () {},
+                            ),
+                          ),
+                        );
+                        return ;
+                      }
+
+                      String toAdd = toDirectoryPathController.text == "" ? toHistory : toDirectoryPathController.text;
 
                       List? totalEnd = [];
                       fileLookupType!.forEach((key, value) {
@@ -456,37 +482,76 @@ class _FillingPageState extends State<FillingPage> {
                       command = "";
                       if(totalEnd.isNotEmpty){
                         if(totalEnd.length == 1){
-                          command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '${toDirectoryPathController.text}/${totalEnd.first[0]}'";
+                          command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0]}'";
                         }else{
 
                           if(repeat == 1){
-                            command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '${toDirectoryPathController.text}/${totalEnd.first[0].toString().replaceAll(".", "_0.")}'";
+                            command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0].toString().replaceAll(".", "_0.")}'";
                             for(int i = 1;i<totalEnd.length ; i++){
-                              command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '${toDirectoryPathController.text}/${totalEnd[i][0].toString().replaceAll(".", "_${i.toString()}.")}'";
+                              command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '$toAdd/${totalEnd[i][0].toString().replaceAll(".", "_${i.toString()}.")}'";
                             }
                           }else{
-                            command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '${toDirectoryPathController.text}/${totalEnd.first[0]}'";
+                            command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0]}'";
                             for(int i = 1;i<totalEnd.length ; i++){
-                              command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '${toDirectoryPathController.text}/${totalEnd[i][0]}'";
+                              command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '$toAdd/${totalEnd[i][0]}'";
                             }
                           }
                         }
                       }
 
+                      String fromAdd = fromDirectoryPathController.text == "" ? fromHistory : fromDirectoryPathController.text;
+                      await neverLocalStorageWrite("FromHistory",fromAdd);
+                      await neverLocalStorageWrite("ToHistory",toAdd);
+
+
                       Clipboard.setData(ClipboardData(text: command));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('操作成功，命令已拷贝至剪切板'),
+                          action: SnackBarAction(
+                            label: '确认',
+                            onPressed: () {},
+                          ),
+                        ),
+                      );
                       setState(() {});
                     },
                     child: Container(
                       decoration: const BoxDecoration(
                         color: Colors.blue,
-                        borderRadius: BorderRadius.all(Radius.circular(6.0)),
+                        borderRadius: BorderRadius.all(Radius.circular(4.0)),
                       ),
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                      child: const Text("操作已选择文件",style: TextStyle(color: Colors.white),),
+                      padding: const EdgeInsets.all(10),
+                      child: const Text("操作已选择文件",style: TextStyle(color: Colors.white,fontSize: 12),),
+                    ),
+                  ),
+                  const SizedBox(width: 10,),
+                  InkWell(
+                    onTap: () async{
+                      setState(() {
+                        fromDirectoryPathController.text = "";
+                        toDirectoryPathController.text = "";
+                        fileLookupList!.clear();
+                        fileLookupType!.clear();
+                        command = "";
+                        total = 0;
+                      });
+                    },
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.all(Radius.circular(4.0)),
+                      ),
+                      padding: const EdgeInsets.all(10),
+                      child: const Text("清空输入",style: TextStyle(color: Colors.white,fontSize: 12),),
                     ),
                   ),
                 ],
               ),
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+              child: const Text("先点击'检索源文件地址目录'，选择需要的文件类型，再点击'操作已选择文件'进行操作",style: TextStyle(fontSize: 11,color: Colors.black),),
             ),
             Container(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),

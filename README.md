@@ -30,6 +30,11 @@ Demo：https://github.com/NeverOvO/learningfoundation
 
 ## 更新日志
 
+### 2023/01/24
+    -  增加历史路径功能，不重新选择则默认为上次路径
+    -  增加更多操作提示
+    -  部分UI性能调整
+
 ### 2023/01/14
     -  添加解释文章
 
