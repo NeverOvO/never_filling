@@ -39,7 +39,7 @@ dependencies:
   file_picker: ^5.2.5
   mime: ^1.0.4 #判断文件类型
   desktop_drop: ^0.4.0 #文件拖动
-  neveruseless: ^0.0.7
+  neveruseless: ^0.0.8
 
 dev_dependencies:
   flutter_test:

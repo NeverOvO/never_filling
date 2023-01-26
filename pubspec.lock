@@ -188,10 +188,10 @@ packages:
     dependency: "direct main"
     description:
       name: neveruseless
-      sha256: e1450b67a13cce6f0b0e055bd35456bd7dd3dde08705ffa11e1752c7d4fdd01e
+      sha256: c4cdaaa287c777a84f4a43fd92b69508befff16611dd99f4b3c7ad3d1fb04dff
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.0.7"
+    version: "0.0.8"
   path:
     dependency: transitive
     description:

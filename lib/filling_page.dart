@@ -55,6 +55,8 @@ class _FillingPageState extends State<FillingPage> {
     if(toHistory == "null"){
       toHistory = "";
     }
+
+    setState(() {});
   }
 
   @override
