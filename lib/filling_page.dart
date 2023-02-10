@@ -86,6 +86,7 @@ class _FillingPageState extends State<FillingPage> {
 
   void queryDB() async{
     blackList = await db.query('Black');
+    setState(() {});
   }
 
 
@@ -416,8 +417,9 @@ class _FillingPageState extends State<FillingPage> {
                                               onPressed: () async{
                                                 Navigator.of(context).pop();
                                                 await db.insert('Black', {'title': fileLookupList![index][0] , 'time': DateTime.now().toString().split(".").first,'other' : ""});
+                                                fileLookupList!.removeAt(index);
+                                                total -=1;
                                                 queryDB();
-                                                retrieval();
                                               },
                                             ),
                                           ],
