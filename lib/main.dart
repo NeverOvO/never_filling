@@ -14,7 +14,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         appBarTheme: const AppBarTheme(
-          titleTextStyle: TextStyle(fontSize: 15),
+          backgroundColor: Colors.white,
+          iconTheme: IconThemeData(color: Colors.cyan),
+          titleTextStyle: TextStyle(fontSize: 15,color: Colors.black),
         )
       ),
       home: const FillingPage(),

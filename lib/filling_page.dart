@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mime/mime.dart';
+import 'package:never_filling/blacklist.dart';
 import 'package:neveruseless/neveruseless.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class FillingPage extends StatefulWidget {
   final Map? arguments;
@@ -24,8 +27,6 @@ class _FillingPageState extends State<FillingPage> {
 
   bool _filePicktrue = true;
 
-
-
   Stream<FileSystemEntity>? fileList;
 
   List? filaName = [];
@@ -38,6 +39,10 @@ class _FillingPageState extends State<FillingPage> {
   int repeat = 0;//0 不保留 1 保留
 
   String command = "";
+
+  var databaseFactory = databaseFactoryFfi;
+  var db;
+  List blackList = [];
 
   @override
   void initState() {
@@ -57,15 +62,75 @@ class _FillingPageState extends State<FillingPage> {
     }
 
     setState(() {});
+
+    db = await databaseFactory.openDatabase("blackList.db");
+    //检查表是否存在
+    var sql ="SELECT * FROM sqlite_master WHERE TYPE = 'table' AND NAME = 'Black'";
+    var res = await db.rawQuery(sql);
+    var returnRes = res!=null && res.length > 0;
+
+    if(!returnRes){
+      await db.execute(
+          '''
+          CREATE TABLE Black (
+              id INTEGER PRIMARY KEY,
+              title TEXT,
+              time TEXT,
+              other TEXT
+          )
+          '''
+      );
+    }
+    queryDB();
   }
 
+  void queryDB() async{
+    blackList = await db.query('Black');
+  }
+
+
   @override
-  void dispose() {
+  void dispose() async {
+    await db.close();
     super.dispose();
   }
 
-  // final List<XFile> _list = [];
   bool _dragging = false;
+
+  double _x = 0.0;
+  double _y = 0.0;
+
+  //文件检索
+  void retrieval() async {
+    command = "";
+    total = 0;
+
+    if(fromDirectoryPathController.text.isNotEmpty){
+      fileList = Directory(fromDirectoryPathController.text).list(recursive: true);
+    }else{
+      if(fromHistory != ""){
+        fileList = Directory(fromHistory).list(recursive: true);
+      }else{
+        return ;
+      }
+    }
+
+    fileLookupList!.clear();
+    fileLookupType!.clear();
+    await for(FileSystemEntity fileSystemEntity in fileList!){
+      if(lookupMimeType(fileSystemEntity.path) != null){
+        if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
+          fileLookupType![lookupMimeType(fileSystemEntity.path)] = "true";
+          String fileName = fileSystemEntity.path.toString().split("/").last;
+          if(blackList.where((element) => element["title"] == fileName).isEmpty){
+            fileLookupList!.add([fileName,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path]);
+          }
+          total = fileLookupList!.length;
+        }
+      }
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,11 +140,34 @@ class _FillingPageState extends State<FillingPage> {
       left: true,
       top: false,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text("文件归档"),
-        ),
         body:ListView(
           children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  InkWell(
+                    onTap: () async{
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const BlacklistPage()),).then((value) async{
+                        queryDB();
+                        retrieval();
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.all(Radius.circular(5.0)),
+                        boxShadow: [BoxShadow(blurRadius: 3, spreadRadius: 0.5, color: Colors.grey.withOpacity(0.3), offset:const Offset(5,5)),],
+                      ),
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                      child: const Text("文件黑名单",style: TextStyle(fontSize: 12),),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             DropTarget(
               onDragDone: (detail) {
                 setState(() {
@@ -96,7 +184,7 @@ class _FillingPageState extends State<FillingPage> {
                     return;
                   }else{
                     fromDirectoryPathController.text = detail.files.first.path;
-                    setState(() {});
+                    retrieval();
                   }
                 });
               },
@@ -113,7 +201,7 @@ class _FillingPageState extends State<FillingPage> {
               child: Container(
                 color: _dragging ? Colors.blue.withOpacity(0.4) : Colors.transparent,
                 child:Container(
-                  padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                  padding: const EdgeInsets.fromLTRB(10, 20, 0, 20),
                   child: Row(
                     children: [
                       Expanded(
@@ -169,33 +257,8 @@ class _FillingPageState extends State<FillingPage> {
               child: Row(
                 children: [
                   InkWell(
-                    onTap: () async{
-                      command = "";
-                      total = 0;
-
-                      if(fromDirectoryPathController.text.isNotEmpty){
-                        fileList = Directory(fromDirectoryPathController.text).list(recursive: true);
-                      }else{
-                        if(fromHistory != ""){
-                          fileList = Directory(fromHistory).list(recursive: true);
-                        }else{
-                          return ;
-                        }
-                      }
-
-                      fileLookupList!.clear();
-                      fileLookupType!.clear();
-                      await for(FileSystemEntity fileSystemEntity in fileList!){
-                        if(lookupMimeType(fileSystemEntity.path) != null){
-                          if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
-                            fileLookupType![lookupMimeType(fileSystemEntity.path)] = "true";
-                            fileLookupList!.add([fileSystemEntity.path.toString().split("/").last,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path]);
-                            total = fileLookupList!.length;
-                          }
-                        }
-                      }
-                      setState(() {});
-
+                    onTap: (){
+                      retrieval();
                     },
                     child: Container(
                       decoration: const BoxDecoration(
@@ -314,37 +377,94 @@ class _FillingPageState extends State<FillingPage> {
                       padding: const EdgeInsets.all(0),
                       itemCount: fileLookupList!.length,
                       itemBuilder: (context ,index){
-                        return Container(
-                          padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                flex: 1,
-                                child:Container(
-                                  alignment: Alignment.centerLeft,
-                                  child:  Text(fileLookupList![index][0],style: TextStyle(fontSize: 10,color:fileLookupType![fileLookupList![index][1]] == "true" ? Colors.blue : Colors.grey),),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Container(
-                                  alignment: Alignment.centerRight,
-                                  padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-                                  child:  Text(fileLookupList![index][1],style: TextStyle(fontSize: 10,color:fileLookupType![fileLookupList![index][1]] == "true" ? Colors.blue : Colors.grey),),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Container(
-                                  alignment: Alignment.centerRight,
-                                  child: SelectableText(fileLookupList![index][2],style: TextStyle(fontSize: 10,color:fileLookupType![fileLookupList![index][1]] == "true" ? Colors.blue : Colors.grey),),
-                                ),
-                              ),
-                            ],
-                          ),
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onSecondaryTap: (){
+                            showMenu(
+                                context: context,
+                                position: RelativeRect.fromLTRB(_x, _y, _x, _y),
+                                items: [
+                                  PopupMenuItem(
+                                    value: 'Black_Add',
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      child: const Text('拉黑文件名',style: TextStyle(fontSize: 13),),
+                                    ),
+                                  ),
+                                ]).then((value){
+                                  if(value == "Black_Add"){
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false, // user must tap button!
+                                      builder: (BuildContext context) {
+                                        return CupertinoAlertDialog(
+                                          title: const Text('拉黑文件名',style: TextStyle(fontSize: 17),),
+                                          content:Container(
+                                            padding: const EdgeInsets.fromLTRB(0, 10, 0, 5),
+                                            child:Text("是否确认【${fileLookupList![index][0]}】拉黑文件名",),
+                                          ),
+                                          actions:<Widget>[
+                                            CupertinoDialogAction(
+                                              child: const Text('取消',style: TextStyle(color: Color.fromRGBO(215, 85, 82,  1)),),
+                                              onPressed: (){
+                                                Navigator.of(context).pop();
+                                              },
+                                            ),
 
+                                            CupertinoDialogAction(
+                                              child: const Text('确定'),
+                                              onPressed: () async{
+                                                Navigator.of(context).pop();
+                                                await db.insert('Black', {'title': fileLookupList![index][0] , 'time': DateTime.now().toString().split(".").first,'other' : ""});
+                                                queryDB();
+                                                retrieval();
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  }
+                            });
+                          },
+                          onSecondaryTapDown: (details){
+                            setState(() {
+                              _x = details.globalPosition.dx;
+                              _y = details.globalPosition.dy;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  flex: 1,
+                                  child:Container(
+                                    alignment: Alignment.centerLeft,
+                                    child:  Text(fileLookupList![index][0],style: TextStyle(fontSize: 10,color:fileLookupType![fileLookupList![index][1]] == "true" ? Colors.blue : Colors.grey),),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+                                    child:  Text(fileLookupList![index][1],style: TextStyle(fontSize: 10,color:fileLookupType![fileLookupList![index][1]] == "true" ? Colors.blue : Colors.grey),),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Container(
+                                    alignment: Alignment.centerRight,
+                                    child: Text(fileLookupList![index][2],style: TextStyle(fontSize: 10,color:fileLookupType![fileLookupList![index][1]] == "true" ? Colors.blue : Colors.grey),),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                          ),
                         );
                       },
                       separatorBuilder: (context,index){
@@ -394,7 +514,7 @@ class _FillingPageState extends State<FillingPage> {
               child: Container(
                 color: _dragging ? Colors.green.withOpacity(0.4) : Colors.transparent,
                 child:Container(
-                  padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                  padding: const EdgeInsets.fromLTRB(10, 20, 0, 20),
                   child: Row(
                     children: [
                       Expanded(

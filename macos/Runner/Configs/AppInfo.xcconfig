@@ -8,7 +8,7 @@
 PRODUCT_NAME = never_filling
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.never.neverFilling
+PRODUCT_BUNDLE_IDENTIFIER = com.example.neverFilling
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2022 com.never. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2023 com.example. All rights reserved.
