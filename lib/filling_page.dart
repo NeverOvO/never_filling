@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:mime/mime.dart';
 import 'package:never_filling/blacklist.dart';
 import 'package:neveruseless/neveruseless.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class FillingPage extends StatefulWidget {
@@ -36,8 +37,6 @@ class _FillingPageState extends State<FillingPage> {
 
   int total = 0;
 
-  int repeat = 0;//0 不保留 1 保留
-
   String command = "";
 
   var databaseFactory = databaseFactoryFfi;
@@ -47,10 +46,13 @@ class _FillingPageState extends State<FillingPage> {
   @override
   void initState() {
     super.initState();
+
     readHis();
   }
 
   void readHis() async{
+
+
     //读取上次操作的位置 如果没有选择则进行默认处理
     fromHistory = await neverLocalStorageRead("FromHistory");
     if(fromHistory == "null"){
@@ -60,6 +62,10 @@ class _FillingPageState extends State<FillingPage> {
     if(toHistory == "null"){
       toHistory = "";
     }
+
+    // String? selectedDirectory = await FilePicker.platform.getDirectoryPath(dialogTitle:"选择源文件夹",lockParentWindow: true);
+    // Directory(fromHistory).list(recursive: true);
+    // FilePicker.platform.getDirectoryPath(initialDirectory: fromHistory,lockParentWindow: false);
 
     setState(() {});
 
@@ -110,7 +116,18 @@ class _FillingPageState extends State<FillingPage> {
       fileList = Directory(fromDirectoryPathController.text).list(recursive: true);
     }else{
       if(fromHistory != ""){
-        fileList = Directory(fromHistory).list(recursive: true);
+        String? selectedDirectory = await FilePicker.platform.getDirectoryPath(dialogTitle:"选择源文件夹",lockParentWindow: true,initialDirectory: fromHistory);
+        if(selectedDirectory != null){
+          command = "";
+          total = 0;
+          fileLookupList!.clear();
+          fileLookupType!.clear();
+          fromDirectoryPathController.text = selectedDirectory;
+          fileList = Directory(selectedDirectory).list(recursive: true);
+          setState(() {});
+        }
+        // 为了保证文件安全以及符合沙盒模式要求下，让用户进行一次复选。
+        // fileList = Directory(fromHistory).list(recursive: true);
       }else{
         return ;
       }
@@ -124,7 +141,7 @@ class _FillingPageState extends State<FillingPage> {
           fileLookupType![lookupMimeType(fileSystemEntity.path)] = "true";
           String fileName = fileSystemEntity.path.toString().split("/").last;
           if(blackList.where((element) => element["title"] == fileName).isEmpty){
-            fileLookupList!.add([fileName,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path]);
+            fileLookupList!.add([fileName,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path,fileName]);
           }
           total = fileLookupList!.length;
         }
@@ -270,23 +287,6 @@ class _FillingPageState extends State<FillingPage> {
                       child: const Text("检索源文件地址目录",style: TextStyle(color: Colors.white,fontSize: 12),),
                     ),
                   ),
-                  const SizedBox(width: 10,),
-                  InkWell(
-                    onTap: () async{
-                      command = "";
-                      setState(() {
-                        repeat == 0 ? repeat = 1 : repeat = 0;
-                      });
-                    },
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.all(Radius.circular(4.0)),
-                      ),
-                      padding: const EdgeInsets.all(10),
-                      child: Text(repeat == 0 ? "重名文件:不保留" : "重名文件:保留",style: const TextStyle(color: Colors.white,fontSize: 12),),
-                    ),
-                  ),
 
                 ],
               ),
@@ -417,8 +417,8 @@ class _FillingPageState extends State<FillingPage> {
                                               onPressed: () async{
                                                 Navigator.of(context).pop();
                                                 await db.insert('Black', {'title': fileLookupList![index][0] , 'time': DateTime.now().toString().split(".").first,'other' : ""});
-                                                fileLookupList!.removeAt(index);
-                                                total -=1;
+                                                total = total - fileLookupList!.where((element) => element[0] == fileLookupList![index][0]).length;
+                                                fileLookupList!.removeWhere((element) => element[0] == fileLookupList![index][0]);
                                                 queryDB();
                                               },
                                             ),
@@ -594,6 +594,19 @@ class _FillingPageState extends State<FillingPage> {
                         return ;
                       }
 
+                      if(fileLookupList!.isEmpty){
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('请先点击"检索文件地址目录"或确认文件数量不为0'),
+                            action: SnackBarAction(
+                              label: '确认',
+                              onPressed: () {},
+                            ),
+                          ),
+                        );
+                        return ;
+                      }
+
                       String toAdd = toDirectoryPathController.text == "" ? toHistory : toDirectoryPathController.text;
 
                       List? totalEnd = [];
@@ -603,25 +616,34 @@ class _FillingPageState extends State<FillingPage> {
                         }
                       });
 
+                      List endFileName = [];
                       command = "";
                       if(totalEnd.isNotEmpty){
-                        if(totalEnd.length == 1){
-                          command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0]}'";
-                        }else{
-
-                          if(repeat == 1){
-                            command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0].toString().replaceAll(".", "_0.")}'";
-                            for(int i = 1;i<totalEnd.length ; i++){
-                              command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '$toAdd/${totalEnd[i][0].toString().replaceAll(".", "_${i.toString()}.")}'";
-                            }
+                        // if(repeat == 1){ // 重名文件保留版本
+                        //   command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0].toString().replaceAll(".", "_0.")}'";
+                        //   for(int i = 1;i<totalEnd.length ; i++){
+                        //     command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '$toAdd/${totalEnd[i][0].toString().replaceAll(".", "_${i.toString()}.")}'";
+                        //   }
+                        // }else{ //重名文件不保留版本
+                        //   command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0]}'";
+                        //   for(int i = 1;i<totalEnd.length ; i++){
+                        //     command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '$toAdd/${totalEnd[i][0]}'";
+                        //   }
+                        // }
+                        //重名文件将会直接保留，在后续会添加时间戳保证非重复。
+                        command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0]}'";
+                        endFileName.add(totalEnd.first[0]);
+                        for(int i = 1;i<totalEnd.length ; i++){
+                          if(endFileName.contains(totalEnd[i][0])){
+                            command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '$toAdd/${totalEnd[i][0].toString().replaceAll(".", "_${DateTime.now().microsecondsSinceEpoch.toString()}.")}'";
                           }else{
-                            command = "mv '${totalEnd.first[2]}/${totalEnd.first[0]}' '$toAdd/${totalEnd.first[0]}'";
-                            for(int i = 1;i<totalEnd.length ; i++){
-                              command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '$toAdd/${totalEnd[i][0]}'";
-                            }
+                            command += " ; mv '${totalEnd[i][2]}/${totalEnd[i][0]}' '$toAdd/${totalEnd[i][0]}'";
+                            endFileName.add(totalEnd[i][0]);
                           }
                         }
                       }
+
+                      endFileName.clear();
 
                       String fromAdd = fromDirectoryPathController.text == "" ? fromHistory : fromDirectoryPathController.text;
                       await neverLocalStorageWrite("FromHistory",fromAdd);

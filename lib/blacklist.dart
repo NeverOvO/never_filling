@@ -25,7 +25,6 @@ class _BlacklistPageState extends State<BlacklistPage> {
   void readDB () async{
     db = await databaseFactory.openDatabase("blackList.db");
     blackList = await db.query('Black');
-    print(blackList);
     setState(() {});
   }
 
