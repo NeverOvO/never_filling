@@ -700,8 +700,12 @@ class _FillingPageState extends State<FillingPage> {
               child: const Text("先点击'检索源文件地址目录'，选择需要的文件类型，再点击'操作已选择文件'进行操作",style: TextStyle(fontSize: 11,color: Colors.black),),
             ),
             Container(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
               child: const Text("请复制以下文本至命令行中，请勿使用SUDO权限，且迁移命令不可逆，请检查并确认路径是否正常",style: TextStyle(fontSize: 11,color: Colors.black),),
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+              child: const SelectableText("服务支持地址：https://www.neverovo.xn--6qq986b3xl/2023/02/15/aboutneverfilling",style: TextStyle(fontSize: 11,color: Colors.black),),
             ),
             Container(
               decoration: BoxDecoration(
