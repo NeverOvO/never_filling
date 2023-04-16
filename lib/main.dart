@@ -1,27 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:never_filling/filling_page.dart';
+import 'package:never_filling/main/main_view.dart';
+import 'package:window_manager/window_manager.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  // 必须加上这一行。
+  await windowManager.ensureInitialized();
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  @override
-  Widget build(BuildContext context) {
-
-    return MaterialApp(
-      title: 'NeverOuO Filling',
-      debugShowCheckedModeBanner:false,
-      theme: ThemeData(
-          primarySwatch: Colors.blue,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            iconTheme: IconThemeData(color: Colors.cyan),
-            titleTextStyle: TextStyle(fontSize: 15,color: Colors.black),
-          )
-      ),
-      home: const FillingPage(),
-    );
-  }
+  WindowOptions windowOptions = const WindowOptions(
+    size: Size(400, 700),
+    minimumSize: Size(400, 700),
+    center: false,
+    backgroundColor: Colors.transparent,
+    skipTaskbar: false,
+    titleBarStyle: TitleBarStyle.normal,
+  );
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
+  runApp(MainPage());
 }
