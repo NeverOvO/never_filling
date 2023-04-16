@@ -51,7 +51,12 @@ class FillingLogic extends GetxController {
         if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
           fileLookupType![lookupMimeType(fileSystemEntity.path)] = "true";
           String fileName = fileSystemEntity.path.toString().split("/").last;
-          double fileSize = File(fileSystemEntity.path.toString()).lengthSync() / 1024 / 1024;
+          double fileSize = 0.0;
+          try{
+            fileSize = File(fileSystemEntity.path.toString()).lengthSync() / 1024 / 1024;
+          }catch(e){
+            fileSize = 0.0;
+          }
           if(mainLogic.blackList.where((element) => element["title"] == fileName).isEmpty){
             fileLookupList!.add([fileName,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path,fileName,fileSize]);
           }
@@ -81,7 +86,12 @@ class FillingLogic extends GetxController {
         if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
           fileLookupType![lookupMimeType(fileSystemEntity.path)] = "true";
           String fileName = fileSystemEntity.path.toString().split("/").last;
-          double fileSize = File(fileSystemEntity.path.toString()).lengthSync() / 1024 / 1024;
+          double fileSize = 0.0;
+          try{
+            fileSize = File(fileSystemEntity.path.toString()).lengthSync() / 1024 / 1024;
+          }catch(e){
+            fileSize = 0.0;
+          }
           if(mainLogic.blackList.where((element) => element["title"] == fileName).isEmpty){
             fileLookupList!.add([fileName,lookupMimeType(fileSystemEntity.path),fileSystemEntity.parent.path,fileName,fileSize]);
           }
