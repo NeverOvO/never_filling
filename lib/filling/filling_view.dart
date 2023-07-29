@@ -205,40 +205,46 @@ class FillingPage extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
                   child: Column(
                     children: [
-                     Container(
-                       padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                       child: GridView.builder(
-                         physics: const NeverScrollableScrollPhysics(),
-                         shrinkWrap: true,
-                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                           crossAxisCount: 5, //每行三列
-                           childAspectRatio: 3, //显示区域宽高相等
-                           mainAxisSpacing: 10,
-                           crossAxisSpacing: 10,
-                         ),
-                         itemCount: logic.fileLookupType!.length,
-                         itemBuilder: (context, index) {
-                           return InkWell(
-                             onTap:(){
-                               if(logic.fileLookupType![logic.fileLookupType!.keys.toList()[index]] == "true"){
-                                 logic.tapFileLookupType(false,index);
-                               }else{
-                                 logic.tapFileLookupType(true,index);
-                               }
-                             },
-                             child: Container(
-                               alignment: Alignment.center,
-                               padding: const EdgeInsets.fromLTRB(0, 0, 0, 3),
-                               decoration: BoxDecoration(
-                                 color: logic.fileLookupType![logic.fileLookupType!.keys.toList()[index]] == "true" ? Colors.amberAccent : const Color.fromRGBO(244, 244, 244, 1),
-                                 borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                               ),
-                               child: Text(logic.fileLookupType!.keys.toList()[index], style: const TextStyle(fontSize: 10, color:Colors.black87), maxLines: 1,overflow: TextOverflow.ellipsis,),
-                             ),
-                           );
-                         },
-                       ),
-                     ),
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                        child: GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4, //每行三列
+                            childAspectRatio: 3.5, //显示区域宽高相等
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                          ),
+                          itemCount: logic.fileLookupType!.length,
+                          itemBuilder: (context, index) {
+                            //文件类型
+                            String type = logic.fileLookupType!.keys.toList()[index];
+                            //一个分类下文件该操作的数量
+                            int fileNum = logic.fileLookupList!.where((element) => element[1] == type).length - logic.fileLookupDelList.where((element) => element[1] == type).length;
+                            return InkWell(
+                              onTap:(){
+                                //大类标签的全体选择
+                                if(fileNum > 0){
+                                  logic.tapFileLookupType(false,type);//大类删除
+                                }else{
+                                  logic.tapFileLookupType(true,type);//大类选择
+                                }
+                              },
+                              child: Container(
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.fromLTRB(3, 0, 3, 0),
+                                decoration: BoxDecoration(
+                                  color: (fileNum > 0) ? Colors.amberAccent : const Color.fromRGBO(244, 244, 244, 1),
+                                  borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+                                ),
+                                child: Text("$type - $fileNum/${logic.fileLookupList!.where((element) => element[1] == type).length}",
+                                  style: const TextStyle(fontSize: 10, color:Colors.black87), maxLines: 1,overflow: TextOverflow.ellipsis,),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.all(5),
@@ -300,8 +306,9 @@ class FillingPage extends StatelessWidget {
                                                 flex: 2,
                                                 child:Container(
                                                   alignment: Alignment.centerLeft,
-                                                  child:  Text(logic.fileLookupList![index][0] + " ["+ logic.fileLookupList![index][1] + " | ${NumUtil.getNumByValueDouble(logic.fileLookupList![index][4], 2)}M" +  "]",
-                                                    style: TextStyle(fontSize: 10,color:logic.fileLookupType![logic.fileLookupList![index][1]] == "true" ? Colors.black : Colors.grey),),
+                                                  child: Text(logic.fileLookupList![index][0] + " ["+ logic.fileLookupList![index][1] + " | ${NumUtil.getNumByValueDouble(logic.fileLookupList![index][4], 2)}M" +  "]",
+                                                    style: TextStyle(fontSize: 10,
+                                                        color:logic.fileLookupDelList.contains(logic.fileLookupList![index]) ? Colors.grey : Colors.black),),
                                                 ),
                                               ),
                                               Expanded(
@@ -309,7 +316,7 @@ class FillingPage extends StatelessWidget {
                                                 child: Container(
                                                   alignment: Alignment.centerRight,
                                                   child: Text("源${logic.fileLookupList![index][2].toString().replaceAll(logic.fromDirectoryPathController.text, "")}",
-                                                    style: TextStyle(fontSize: 10,color:logic.fileLookupType![logic.fileLookupList![index][1]] == "true" ? Colors.black : Colors.grey),),
+                                                    style: TextStyle(fontSize: 10,color:logic.fileLookupDelList.contains(logic.fileLookupList![index]) ? Colors.grey : Colors.black),),
                                                 ),
                                               ),
                                               InkWell(

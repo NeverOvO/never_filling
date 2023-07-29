@@ -22,8 +22,9 @@ class FillingLogic extends GetxController {
   bool filePicktrue = true;
 
 
-  //文件检索
+  //文件检索 - 点击选择
   void retrieval() async {
+    print("文件检索");
     command = "";
     total = 0;
 
@@ -36,6 +37,7 @@ class FillingLogic extends GetxController {
         total = 0;
         fileLookupList!.clear();
         fileLookupType!.clear();
+        fileLookupDelList.clear();
         fromDirectoryPathController.text = selectedDirectory;
         fileList = Directory(selectedDirectory).list(recursive: true);
         update();
@@ -46,6 +48,7 @@ class FillingLogic extends GetxController {
 
     fileLookupList!.clear();
     fileLookupType!.clear();
+    fileLookupDelList.clear();
     await for(FileSystemEntity fileSystemEntity in fileList!){
       if(lookupMimeType(fileSystemEntity.path) != null){
         if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
@@ -68,8 +71,9 @@ class FillingLogic extends GetxController {
     mainLogic.beBig();
   }
 
-  //文件检索1
+  //文件检索1 - 拖拽直接进入
   void retrievalOne() async {
+    print("文件检索1");
     command = "";
     total = 0;
 
@@ -81,6 +85,7 @@ class FillingLogic extends GetxController {
 
     fileLookupList!.clear();
     fileLookupType!.clear();
+    fileLookupDelList.clear();
     await for(FileSystemEntity fileSystemEntity in fileList!){
       if(lookupMimeType(fileSystemEntity.path) != null){
         if(!fileSystemEntity.path.toString().split("/").last.startsWith(".")){
@@ -121,18 +126,30 @@ class FillingLogic extends GetxController {
 
   List? filaName = [];
 
+  //文件类型
   Map? fileLookupType = {};
+
+  //全部文件列表
   List? fileLookupList = [];
 
-  void tapFileLookupType(bool value,int index){
-    fileLookupType![fileLookupType!.keys.toList()[index]] = value.toString();
-    if(value == true){
-      total += fileLookupList!.where((element) => element[1] == fileLookupType!.keys.toList()[index]).length;
-    }else{
-      total -= fileLookupList!.where((element) => element[1] == fileLookupType!.keys.toList()[index]).length;
+  //临时删除列表
+  List fileLookupDelList = [];
+
+  //大类去除文件
+  void tapFileLookupType(bool value,String type){
+    // fileLookupType![type] = value.toString();
+    if(value == true){//大类添加
+      total = total + fileLookupDelList.where((element) => element[1] == type).length;
+      fileLookupDelList.removeWhere((element) => element[1] == type);
+    }else{//大类删除
+      fileLookupDelList.addAll(fileLookupList!.where((element) => element[1] == type));
+      fileLookupDelList = fileLookupDelList.toSet().toList();
+      total = fileLookupList!.length - fileLookupDelList.length;
     }
     update();
   }
+
+
 
   int total = 0;
 
@@ -230,16 +247,21 @@ class FillingLogic extends GetxController {
     super.onClose();
   }
 
+  //临时删除
   void fillDel(int index){
-    if(fileLookupType![fileLookupList![index][1]] == "true"){
-      fileLookupType![fileLookupList![index][1]] = "false";
+    if(fileLookupDelList.contains(fileLookupList![index])){
+      fileLookupDelList.remove(fileLookupList![index]);
+      total += 1;
     }else{
-      fileLookupType![fileLookupList![index][1]] = "true";
+      fileLookupDelList.add(fileLookupList![index]);
+      total -= 1;
     }
+
     update();
   }
 
   void filling() async{
+
 
     if(fromDirectoryPathController.text == "" && fromHistory == ""){
       Get.snackbar(
@@ -275,12 +297,9 @@ class FillingLogic extends GetxController {
 
     String toAdd = toDirectoryPathController.text == "" ? toHistory : toDirectoryPathController.text;
 
-    List? totalEnd = [];
-    fileLookupType!.forEach((key, value) {
-      if(value == "true"){
-        totalEnd.addAll(fileLookupList!.where((element) => element[1] == key));
-      }
-    });
+    List totalEnd = [];
+    totalEnd.addAll(fileLookupList!);
+    totalEnd.removeWhere((element) => fileLookupDelList.contains(element));
 
     if(totalEnd.isEmpty){
       Get.snackbar(
@@ -331,6 +350,7 @@ class FillingLogic extends GetxController {
     toDirectoryPathController.text = "";
     fileLookupList!.clear();
     fileLookupType!.clear();
+    fileLookupDelList.clear();
     command = "";
     total = 0;
     mainLogic.beSmall(small: true);
