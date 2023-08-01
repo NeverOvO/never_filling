@@ -175,11 +175,16 @@ class FillingLogic extends GetxController {
     if(fromHistory == "null"){
       fromHistory = "";
     }
+    if(Directory(fromHistory).existsSync() == false){
+      fromHistory = "";
+    }
     toHistory = await neverLocalStorageRead("ToHistory");
     if(toHistory == "null"){
       toHistory = "";
     }
-
+    if(Directory(toHistory).existsSync() == false){
+      toHistory = "";
+    }
     update();
 
   }
